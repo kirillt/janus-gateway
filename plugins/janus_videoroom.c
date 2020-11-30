@@ -5313,6 +5313,18 @@ void janus_videoroom_slow_link(janus_plugin_session *handle, int uplink, int vid
 			json_object_set_new(event, "videoroom", json_string("slow_link"));
 			gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
 			json_decref(event);
+			//also notify the publiser side,the subscripter has a slow_link. 
+			janus_videoroom_publisher *publisher = viewer->feed;
+			if(publisher != NULL) {
+				//JANUS_LOG(LOG_WARN,"publisher = %p,publisher->session = %p\n",publisher,publisher->session);  
+				json_t *event1 = json_object();
+				json_object_set_new(event1, "videoroom", json_string("slow_link"));
+				uint32_t bitrate = publisher->bitrate;
+				json_object_set_new(event1, "current-bitrate", json_integer(bitrate));
+				json_object_set_new(event1, "fromSubscripter", json_integer(session->sdp_sessid));
+				gateway->push_event(publisher->session->handle, &janus_videoroom_plugin, NULL, event1, NULL);
+				json_decref(event1);
+			}
 		} else {
 			JANUS_LOG(LOG_WARN, "Got a slow downlink on a VideoRoom viewer? Weird, because it doesn't send media...\n");
 		}
